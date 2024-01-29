@@ -1,0 +1,32 @@
+[package]
+name = "salvo-captcha"
+version = "0.1.0"
+rust-version = "1.75.0"
+edition = "2021"
+authors = ["Awiteb <awitb@hotmail.com>"]
+description = "A captcha middleware for Salvo framework."
+license = "MIT"
+repository = "https://github.com/TheAwiteb/salvo-captcha"
+documentation = "https://docs.rs/salvo-captcha"
+readme = "README.md"
+keywords = ["salvo", "captcha", "middleware"]
+categories = ["web-programming", "network-programming"]
+
+
+[dependencies]
+async-trait = "0.1.77"
+cacache = { version = "12.0.0", default-features = false, features = ["tokio-runtime", "mmap"], optional = true }
+captcha = { version = "0.0.9", default-features = false }
+easy-ext = "1.0.1"
+log = "0.4.20"
+salvo_core = "^ 0.65"
+uuid = { version = "1.7.0", features = ["v4"], optional = true }
+
+[features]
+cacache-storage = ["dep:cacache", "dep:uuid"]
+
+[dev-dependencies]
+tempfile = ">= 3.9"
+tokio = { version = ">= 1.35", features = ["macros", "rt-multi-thread"] }
+base64 = ">= 0.21"
+salvo = { version = ">= 0.65", features = ["affix"] }
