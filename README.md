@@ -8,7 +8,8 @@ A captcha middleware for [salvo](salvo.rs) framework. It uses [`captcha`](https:
 
 </div>
 
-### Add to your project
+## Add to your project
+
 First, add the following to your `Cargo.toml`:
 
 ```toml
@@ -22,36 +23,41 @@ Or use [cargo-add](https://doc.rust-lang.org/cargo/commands/cargo-add.html) to a
 $ cargo add salvo-captcha
 ```
 
-### Usage
+## Usage
+
 See the [examples](examples) directory for a complete example.
 
+## Storage
 
-### Storage
-The storage of the captcha is handled by a [`CaptchaStore`] trait. You can implement your own storage or use the `cacache-rs` by enabling the `cacache-storage` feature.
+The storage of the captcha is handled by a [`CaptchaStore`] trait. You can implement your own storage or use the [`cacache-rs`] by enabling the `cacache-storage` feature.
 
 ```toml
 [dependencies]
 salvo-captcha = { version = "0.1", features = ["cacache-storage"] }
 ```
 
-### Captcha name and difficulty
-In this table you can see the different between the difficulties and the name of the captcha.
+## Captcha name and difficulty
 
-| Name | Difficulty | Image |
-|------|------------|-------|
-| `Amelia` | Easy | ![Simple](https://i.suar.me/1JaxG/s) |
-| `Amelia` | Medium | ![Simple](https://i.suar.me/l7zBl/s) |
-| `Amelia` | Hard | ![Simple](https://i.suar.me/qXAlx/s) |
-| `Lucy` | Easy | ![Simple](https://i.suar.me/edwBG/s) |
-| `Lucy` | Medium | ![Simple](https://i.suar.me/NJmg0/s) |
-| `Lucy` | Hard | ![Simple](https://i.suar.me/OJK7M/s) |
-| `Mila` | Easy | ![Simple](https://i.suar.me/dO78z/s) |
-| `Mila` | Medium | ![Simple](https://i.suar.me/PXBwK/s) |
-| `Mila` | Hard | ![Simple](https://i.suar.me/8edgE/s) |
+In this table, you can see the difference between the difficulties and the name of the captcha.
 
-### License
+|  Name  |                 Easy                 |                Medium                |                 Hard                 |
+| :----: | :----------------------------------: | :----------------------------------: | :----------------------------------: |
+| Amelia | ![Simple](https://i.suar.me/1JaxG/s) | ![Simple](https://i.suar.me/l7zBl/s) | ![Simple](https://i.suar.me/qXAlx/s) |
+|  Lucy  | ![Simple](https://i.suar.me/edwBG/s) | ![Simple](https://i.suar.me/NJmg0/s) | ![Simple](https://i.suar.me/OJK7M/s) |
+|  Mila  | ![Simple](https://i.suar.me/dO78z/s) | ![Simple](https://i.suar.me/PXBwK/s) | ![Simple](https://i.suar.me/8edgE/s) |
+
+## Mirrors
+
+- Github (https://github.com/TheAwiteb/salvo-captcha)
+- Codeberg (https://codeberg.org/awiteb/salvo-captcha)
+
+### Main Repository
+
+- My Git (https://git.4rs.nl/awiteb/salvo-captcha)
+
+## License
+
 This project is licensed under the MIT license for more details see [LICENSE](LICENSE) or http://opensource.org/licenses/MIT.
 
-
 [`CaptchaStore`]: https://docs.rs/salvo_captcha/0.1.0/salvo_captcha/trait.CaptchaStore.html
-[cacache-rs]: https://github.com/zkat/cacache-rs
+[`cacache-rs`]: https://github.com/zkat/cacache-rs
