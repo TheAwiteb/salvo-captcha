@@ -188,11 +188,11 @@ where
 }
 
 #[cfg(test)]
+#[cfg(feature = "cacache-storage")]
 mod tests {
     use super::*;
 
     #[tokio::test]
-    #[cfg(feature = "cacache-storage")]
     async fn cacache_store_captcha() {
         let storage = CacacheStorage::new(
             tempfile::tempdir()
@@ -215,7 +215,6 @@ mod tests {
     }
 
     #[tokio::test]
-    #[cfg(feature = "cacache-storage")]
     async fn cacache_clear_expired() {
         let storage = CacacheStorage::new(
             tempfile::tempdir()
@@ -240,7 +239,6 @@ mod tests {
     }
 
     #[tokio::test]
-    #[cfg(feature = "cacache-storage")]
     async fn cacache_clear_by_token() {
         let storage = CacacheStorage::new(
             tempfile::tempdir()
@@ -265,7 +263,6 @@ mod tests {
     }
 
     #[tokio::test]
-    #[cfg(feature = "cacache-storage")]
     async fn cacache_is_token_exist() {
         let storage = CacacheStorage::new(
             tempfile::tempdir()
@@ -291,7 +288,6 @@ mod tests {
     }
 
     #[tokio::test]
-    #[cfg(feature = "cacache-storage")]
     async fn cacache_get_answer() {
         let storage = CacacheStorage::new(
             tempfile::tempdir()
@@ -319,7 +315,6 @@ mod tests {
     }
 
     #[tokio::test]
-    #[cfg(feature = "cacache-storage")]
     async fn cacache_cache_dir() {
         let cache_dir = tempfile::tempdir()
             .expect("failed to create temp file")
@@ -330,7 +325,6 @@ mod tests {
     }
 
     #[tokio::test]
-    #[cfg(feature = "cacache-storage")]
     async fn cacache_clear_expired_with_expired_after() {
         let storage = CacacheStorage::new(
             tempfile::tempdir()
