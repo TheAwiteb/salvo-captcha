@@ -26,24 +26,20 @@ pub trait CaptchaStorage: Send + Sync + 'static
 where
     Self: Clone + std::fmt::Debug,
 {
-    /// The token type
-    type Token: TryFrom<String> + std::fmt::Display + Send + Sync;
-    /// The answer type
-    type Answer: std::cmp::PartialEq + From<String> + Send + Sync;
     /// The error type of the storage.
     type Error: std::fmt::Display + std::fmt::Debug + Send;
 
     /// Store the captcha token and answer.
     fn store_answer(
         &self,
-        answer: Self::Answer,
-    ) -> impl std::future::Future<Output = Result<Self::Token, Self::Error>> + Send;
+        answer: String,
+    ) -> impl std::future::Future<Output = Result<String, Self::Error>> + Send;
 
     /// Returns the answer of the captcha token. This method will return None if the token is not exist.
     fn get_answer(
         &self,
-        token: &Self::Token,
-    ) -> impl std::future::Future<Output = Result<Option<Self::Answer>, Self::Error>> + Send;
+        token: &str,
+    ) -> impl std::future::Future<Output = Result<Option<String>, Self::Error>> + Send;
 
     /// Clear the expired captcha.
     fn clear_expired(
@@ -54,7 +50,7 @@ where
     /// Clear the captcha by token.
     fn clear_by_token(
         &self,
-        token: &Self::Token,
+        token: &str,
     ) -> impl std::future::Future<Output = Result<(), Self::Error>> + Send;
 }
 
@@ -86,19 +82,17 @@ impl CacacheStorage {
 #[cfg(feature = "cacache-storage")]
 impl CaptchaStorage for CacacheStorage {
     type Error = cacache::Error;
-    type Token = String;
-    type Answer = String;
 
-    async fn store_answer(&self, answer: Self::Answer) -> Result<Self::Token, Self::Error> {
+    async fn store_answer(&self, answer: String) -> Result<String, Self::Error> {
         let token = uuid::Uuid::new_v4();
         log::info!("Storing captcha answer to cacache for token: {token}");
         cacache::write(&self.cache_dir, token.to_string(), answer.as_bytes()).await?;
         Ok(token.to_string())
     }
 
-    async fn get_answer(&self, token: &Self::Token) -> Result<Option<Self::Answer>, Self::Error> {
+    async fn get_answer(&self, token: &str) -> Result<Option<String>, Self::Error> {
         log::info!("Getting captcha answer from cacache for token: {token}");
-        match cacache::read(&self.cache_dir, token.to_string()).await {
+        match cacache::read(&self.cache_dir, token).await {
             Ok(answer) => {
                 log::info!("Captcha answer is exist in cacache for token: {token}");
                 Ok(Some(
@@ -120,7 +114,7 @@ impl CaptchaStorage for CacacheStorage {
     async fn clear_expired(&self, expired_after: Duration) -> Result<(), Self::Error> {
         let now = SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
-            .expect("SystemTime must be later than UNIX_EPOCH")
+            .expect("SystemTime before UNIX EPOCH!")
             .as_millis();
         let expired_after = expired_after.as_millis();
 
@@ -143,10 +137,10 @@ impl CaptchaStorage for CacacheStorage {
         Ok(())
     }
 
-    async fn clear_by_token(&self, token: &Self::Token) -> Result<(), Self::Error> {
+    async fn clear_by_token(&self, token: &str) -> Result<(), Self::Error> {
         log::info!("Clearing captcha token from cacache: {token}");
         let remove_opts = cacache::RemoveOpts::new().remove_fully(true);
-        remove_opts.remove(&self.cache_dir, token.to_string()).await
+        remove_opts.remove(&self.cache_dir, token).await
     }
 }
 
@@ -155,20 +149,18 @@ where
     T: CaptchaStorage,
 {
     type Error = T::Error;
-    type Token = T::Token;
-    type Answer = T::Answer;
 
     fn store_answer(
         &self,
-        answer: Self::Answer,
-    ) -> impl std::future::Future<Output = Result<Self::Token, Self::Error>> + Send {
+        answer: String,
+    ) -> impl std::future::Future<Output = Result<String, Self::Error>> + Send {
         self.as_ref().store_answer(answer)
     }
 
     fn get_answer(
         &self,
-        token: &Self::Token,
-    ) -> impl std::future::Future<Output = Result<Option<Self::Answer>, Self::Error>> + Send {
+        token: &str,
+    ) -> impl std::future::Future<Output = Result<Option<String>, Self::Error>> + Send {
         self.as_ref().get_answer(token)
     }
 
@@ -181,7 +173,7 @@ where
 
     fn clear_by_token(
         &self,
-        token: &Self::Token,
+        token: &str,
     ) -> impl std::future::Future<Output = Result<(), Self::Error>> + Send {
         self.as_ref().clear_by_token(token)
     }
@@ -281,7 +273,7 @@ mod tests {
             .expect("failed to check if token is exist")
             .is_some());
         assert!(storage
-            .get_answer(&"token".to_owned())
+            .get_answer("token")
             .await
             .expect("failed to check if token is exist")
             .is_none());
@@ -308,7 +300,7 @@ mod tests {
             Some("answer".to_owned())
         );
         assert!(storage
-            .get_answer(&"token".to_owned())
+            .get_answer("token")
             .await
             .expect("failed to get captcha answer")
             .is_none());

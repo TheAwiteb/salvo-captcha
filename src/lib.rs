@@ -36,7 +36,7 @@ pub const CAPTCHA_STATE_KEY: &str = "::salvo_captcha::captcha_state";
 pub struct Captcha<S, F>
 where
     S: CaptchaStorage,
-    F: CaptchaFinder<Token = S::Token, Answer = S::Answer>,
+    F: CaptchaFinder,
 {
     /// The captcha finder, used to find the captcha token and answer from the request.
     finder: F,
@@ -47,20 +47,20 @@ where
 }
 
 /// The captcha states of the request
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CaptchaState {
+    /// The captcha check is skipped. This depends on the skipper.
+    #[default]
+    Skipped,
     /// The captcha is checked and passed. If the captcha is passed, it will be cleared from the storage.
     Passed,
-    /// The captcha check is skipped. This depends on the skipper.
-    Skipped,
     /// Can't find the captcha token in the request
     TokenNotFound,
     /// Can't find the captcha answer in the request
     AnswerNotFound,
-    /// The captcha token is wrong, can't find the captcha in the storage.
-    /// Maybe the captcha token entered by the user is wrong, or the captcha is expired, because the storage has been cleared.
+    /// Can't find the captcha token in the storage or the token is wrong (not valid string)
     WrongToken,
-    /// The captcha answer is wrong. This will not clear the captcha from the storage.
+    /// Can't find the captcha answer in the storage or the answer is wrong (not valid string)
     WrongAnswer,
     /// Storage error
     StorageError,
@@ -69,13 +69,13 @@ pub enum CaptchaState {
 impl<S, F> Captcha<S, F>
 where
     S: CaptchaStorage,
-    F: CaptchaFinder<Token = S::Token, Answer = S::Answer>,
+    F: CaptchaFinder,
 {
     /// Create a new Captcha
-    pub fn new(storage: impl Into<S>, finder: impl Into<F>) -> Self {
+    pub fn new(storage: S, finder: F) -> Self {
         Self {
-            finder: finder.into(),
-            storage: storage.into(),
+            finder,
+            storage,
             skipper: Box::new(none_skipper),
         }
     }
@@ -94,19 +94,22 @@ where
 
 /// The captcha extension of the depot.
 /// Used to get the captcha info from the depot.
-#[easy_ext::ext(CaptchaDepotExt)]
-impl Depot {
+pub trait CaptchaDepotExt {
     /// Get the captcha state from the depot
-    pub fn get_captcha_state(&self) -> Option<&CaptchaState> {
-        self.get(CAPTCHA_STATE_KEY).ok()
+    fn get_captcha_state(&self) -> CaptchaState;
+}
+
+impl CaptchaDepotExt for Depot {
+    fn get_captcha_state(&self) -> CaptchaState {
+        self.get(CAPTCHA_STATE_KEY).cloned().unwrap_or_default()
     }
 }
 
-#[async_trait::async_trait]
+#[salvo_core::async_trait]
 impl<S, F> Handler for Captcha<S, F>
 where
     S: CaptchaStorage,
-    F: CaptchaFinder<Token = S::Token, Answer = S::Answer> + 'static,
+    F: CaptchaFinder + 'static, // why?
 {
     async fn handle(
         &self,
@@ -122,28 +125,28 @@ where
         }
 
         let token = match self.finder.find_token(req).await {
-            Ok(Some(token)) => token,
-            Ok(None) => {
+            Some(Some(token)) => token,
+            Some(None) => {
                 log::info!("Captcha token is not found in request");
                 depot.insert(CAPTCHA_STATE_KEY, CaptchaState::TokenNotFound);
                 return;
             }
-            Err(err) => {
-                log::error!("Failed to find captcha token from request: {err:?}");
+            None => {
+                log::error!("Invalid token found in request");
                 depot.insert(CAPTCHA_STATE_KEY, CaptchaState::WrongToken);
                 return;
             }
         };
 
         let answer = match self.finder.find_answer(req).await {
-            Ok(Some(answer)) => answer,
-            Ok(None) => {
+            Some(Some(answer)) => answer,
+            Some(None) => {
                 log::info!("Captcha answer is not found in request");
                 depot.insert(CAPTCHA_STATE_KEY, CaptchaState::AnswerNotFound);
                 return;
             }
-            Err(err) => {
-                log::error!("Failed to find captcha answer from request: {err:?}");
+            None => {
+                log::error!("Invalid answer found in request");
                 depot.insert(CAPTCHA_STATE_KEY, CaptchaState::WrongAnswer);
                 return;
             }

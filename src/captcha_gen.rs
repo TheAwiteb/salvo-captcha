@@ -1,3 +1,14 @@
+// Copyright (c) 2024, Awiteb <a@4rs.nl>
+//     A captcha middleware for Salvo framework.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+
 use crate::{CaptchaDifficulty, CaptchaName, CaptchaStorage};
 
 /// Captcha generator, used to generate a new captcha image. This trait are implemented for all [`CaptchaStorage`].
@@ -11,7 +22,7 @@ pub trait CaptchaGenerator: CaptchaStorage {
         &self,
         name: CaptchaName,
         difficulty: CaptchaDifficulty,
-    ) -> impl std::future::Future<Output = Result<Option<(Self::Token, Vec<u8>)>, Self::Error>> + Send
+    ) -> impl std::future::Future<Output = Result<Option<(String, Vec<u8>)>, Self::Error>> + Send
     {
         async {
             let Some((captcha_answer, captcha_image)) =
@@ -20,7 +31,7 @@ pub trait CaptchaGenerator: CaptchaStorage {
                 return Ok(None);
             };
 
-            let token = self.store_answer(captcha_answer.into()).await?;
+            let token = self.store_answer(captcha_answer).await?;
             Ok(Some((token, captcha_image)))
         }
     }

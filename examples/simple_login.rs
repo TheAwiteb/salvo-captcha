@@ -3,24 +3,12 @@
 // You can see a video of this example here:
 //
 // Run the example with `cargo run --example simple_login --features cacache-storage`
-//
-// Or set up a crate for it, with the following `Cargo.toml`:
-// ```toml
-// [dependencies]
-// base64 = ">= 0.21"
-// salvo = { version = ">= 0.65", features = ["affix"] }
-// salvo-captcha = { version = ">= 0.1", features = ["cacache-storage"] }
-// tokio = { version = ">= 1.35", features = ["macros", "rt-multi-thread", "time"] }
-// ```
 
 use std::{sync::Arc, time::Duration};
 
 use base64::{engine::GeneralPurpose, Engine};
 use salvo::prelude::*;
 use salvo_captcha::*;
-
-// The type of the captcha
-type MyCaptcha = Captcha<CacacheStorage, CaptchaFormFinder<String, String>>;
 
 // To convert the image to base64, to show it in the browser
 const BASE_64_ENGINE: GeneralPurpose = GeneralPurpose::new(
@@ -29,7 +17,7 @@ const BASE_64_ENGINE: GeneralPurpose = GeneralPurpose::new(
 );
 
 #[handler]
-async fn index(_req: &mut Request, res: &mut Response, depot: &mut Depot) {
+async fn index(res: &mut Response, depot: &mut Depot) {
     // Get the captcha from the depot
     let captcha_storage = depot.obtain::<Arc<CacacheStorage>>().unwrap();
 
@@ -51,7 +39,7 @@ async fn index(_req: &mut Request, res: &mut Response, depot: &mut Depot) {
 #[handler]
 async fn auth(req: &mut Request, res: &mut Response, depot: &mut Depot) {
     // Get the captcha state from the depot, where we can know if the captcha is passed
-    let captcha_state = depot.get_captcha_state().unwrap();
+    let captcha_state = depot.get_captcha_state();
     // Not important, just for demo
     let Some(username) = req.form::<String>("username").await else {
         res.status_code(StatusCode::BAD_REQUEST);
@@ -76,7 +64,7 @@ async fn auth(req: &mut Request, res: &mut Response, depot: &mut Depot) {
 
 #[tokio::main]
 async fn main() {
-    let captcha_middleware = MyCaptcha::new(
+    let captcha_middleware = Captcha::new(
         CacacheStorage::new("./captcha-cache"),
         CaptchaFormFinder::new(),
     )
@@ -115,6 +103,7 @@ async fn main() {
         );
 
     let acceptor = TcpListener::new(("127.0.0.1", 5800)).bind().await;
+    println!("Starting server on http://127.0.0.1:5800");
     Server::new(acceptor).serve(router).await;
     captcha_cleaner.await.ok();
 }

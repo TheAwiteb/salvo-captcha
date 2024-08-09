@@ -9,49 +9,37 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-use std::marker::PhantomData;
-
 use salvo_core::http::header::HeaderName;
 use salvo_core::http::Request;
 
 /// Trait to find the captcha token and answer from the request.
 pub trait CaptchaFinder: Send + Sync {
-    /// The token type
-    type Token: TryFrom<String> + Sync + Send;
-    /// The answer type
-    type Answer: TryFrom<String> + Sync + Send;
-
-    /// The token error type
-    type TError: std::fmt::Debug + Send;
-    /// The answer error type
-    type AError: std::fmt::Debug + Send;
-
     /// Find the captcha token from the request.
     ///
-    /// Return [`None`] if the request does not contain a captcha token. An error is returned if the token is invalid format.
+    /// ### Returns
+    /// - None: If the token is not found
+    /// - Some(None): If the token is found but is invalid (e.g. not a valid string)
+    /// - Some(Some(token)): If the token is found
     fn find_token(
         &self,
         req: &mut Request,
-    ) -> impl std::future::Future<Output = Result<Option<Self::Token>, Self::TError>> + std::marker::Send;
+    ) -> impl std::future::Future<Output = Option<Option<String>>> + std::marker::Send;
 
     /// Find the captcha answer from the request.
     ///
-    /// Return [`None`] if the request does not contain a captcha answer. An error is returned if the answer is invalid format.
+    /// ### Returns
+    /// - None: If the answer is not found
+    /// - Some(None): If the answer is found but is invalid (e.g. not a valid string)
+    /// - Some(Some(answer)): If the answer is found
     fn find_answer(
         &self,
         req: &mut Request,
-    ) -> impl std::future::Future<Output = Result<Option<Self::Answer>, Self::AError>> + std::marker::Send;
+    ) -> impl std::future::Future<Output = Option<Option<String>>> + std::marker::Send;
 }
 
 /// Find the captcha token and answer from the header
 #[derive(Debug)]
-pub struct CaptchaHeaderFinder<T, A>
-where
-    T: TryFrom<String> + Sync + Send,
-    A: TryFrom<String> + Sync + Send,
-{
-    phantom: PhantomData<(T, A)>,
-
+pub struct CaptchaHeaderFinder {
     /// The header name of the captcha token
     ///
     /// Default: "x-captcha-token"
@@ -65,13 +53,7 @@ where
 
 /// Find the captcha token and answer from the form
 #[derive(Debug)]
-pub struct CaptchaFormFinder<T, A>
-where
-    T: TryFrom<String> + Sync + Send,
-    A: TryFrom<String> + Sync + Send,
-{
-    phantom: PhantomData<(T, A)>,
-
+pub struct CaptchaFormFinder {
     /// The form name of the captcha token
     ///
     /// Default: "captcha_token"
@@ -83,11 +65,7 @@ where
     pub answer_name: String,
 }
 
-impl<T, A> CaptchaHeaderFinder<T, A>
-where
-    T: TryFrom<String> + Sync + Send,
-    A: TryFrom<String> + Sync + Send,
-{
+impl CaptchaHeaderFinder {
     /// Create a new CaptchaHeaderFinder
     pub fn new() -> Self {
         Self::default()
@@ -106,11 +84,7 @@ where
     }
 }
 
-impl<T, A> CaptchaFormFinder<T, A>
-where
-    T: TryFrom<String> + Sync + Send,
-    A: TryFrom<String> + Sync + Send,
-{
+impl CaptchaFormFinder {
     /// Create a new CaptchaFormFinder
     pub fn new() -> Self {
         Self::default()
@@ -129,99 +103,57 @@ where
     }
 }
 
-impl<T, A> Default for CaptchaHeaderFinder<T, A>
-where
-    T: TryFrom<String> + Sync + Send,
-    A: TryFrom<String> + Sync + Send,
-{
+impl Default for CaptchaHeaderFinder {
     /// Create a default CaptchaHeaderFinder with:
     /// - token_header: "x-captcha-token"
     /// - answer_header: "x-captcha-answer"
     fn default() -> Self {
         Self {
-            phantom: PhantomData,
             token_header: HeaderName::from_static("x-captcha-token"),
             answer_header: HeaderName::from_static("x-captcha-answer"),
         }
     }
 }
 
-impl<T, A> Default for CaptchaFormFinder<T, A>
-where
-    T: TryFrom<String> + Sync + Send,
-    A: TryFrom<String> + Sync + Send,
-{
+impl Default for CaptchaFormFinder {
     /// Create a default CaptchaFormFinder with:
     /// - token_name: "captcha_token"
     /// - answer_name: "captcha_answer"
     fn default() -> Self {
         Self {
-            phantom: PhantomData,
             token_name: "captcha_token".to_string(),
             answer_name: "captcha_answer".to_string(),
         }
     }
 }
 
-impl<T, A> CaptchaFinder for CaptchaHeaderFinder<T, A>
-where
-    T: TryFrom<String> + Sync + Send,
-    A: TryFrom<String> + Sync + Send,
-    <T as TryFrom<String>>::Error: Send,
-    <T as TryFrom<String>>::Error: std::fmt::Debug,
-    <A as TryFrom<String>>::Error: Send,
-    <A as TryFrom<String>>::Error: std::fmt::Debug,
-{
-    type Token = T;
-    type Answer = A;
-
-    type TError = <T as TryFrom<String>>::Error;
-    type AError = <A as TryFrom<String>>::Error;
-
-    async fn find_token(&self, req: &mut Request) -> Result<Option<Self::Token>, Self::TError> {
+impl CaptchaFinder for CaptchaHeaderFinder {
+    async fn find_token(&self, req: &mut Request) -> Option<Option<String>> {
         req.headers()
             .get(&self.token_header)
-            .and_then(|t| t.to_str().ok())
-            .map(|t| Self::Token::try_from(t.to_string()))
-            .transpose()
+            .map(|t| t.to_str().map(ToString::to_string).ok())
     }
 
-    async fn find_answer(&self, req: &mut Request) -> Result<Option<Self::Answer>, Self::AError> {
+    async fn find_answer(&self, req: &mut Request) -> Option<Option<String>> {
         req.headers()
             .get(&self.answer_header)
-            .and_then(|a| a.to_str().ok())
-            .map(|a| Self::Answer::try_from(a.to_string()))
-            .transpose()
+            .map(|a| a.to_str().map(ToString::to_string).ok())
     }
 }
 
-impl<T, A> CaptchaFinder for CaptchaFormFinder<T, A>
-where
-    T: TryFrom<String> + Sync + Send,
-    A: TryFrom<String> + Sync + Send,
-    <T as TryFrom<String>>::Error: Send,
-    <T as TryFrom<String>>::Error: std::fmt::Debug,
-    <A as TryFrom<String>>::Error: Send,
-    <A as TryFrom<String>>::Error: std::fmt::Debug,
-{
-    type Token = T;
-    type Answer = A;
-
-    type TError = <T as TryFrom<String>>::Error;
-    type AError = <A as TryFrom<String>>::Error;
-
-    async fn find_token(&self, req: &mut Request) -> Result<Option<Self::Token>, Self::TError> {
-        req.form::<String>(&self.token_name)
+impl CaptchaFinder for CaptchaFormFinder {
+    async fn find_token(&self, req: &mut Request) -> Option<Option<String>> {
+        req.form_data()
             .await
-            .map(|t| Self::Token::try_from(t.to_string()))
-            .transpose()
+            .map(|form| form.fields.get(&self.token_name).cloned())
+            .ok()
     }
 
-    async fn find_answer(&self, req: &mut Request) -> Result<Option<Self::Answer>, Self::AError> {
-        req.form::<String>(&self.answer_name)
+    async fn find_answer(&self, req: &mut Request) -> Option<Option<String>> {
+        req.form_data()
             .await
-            .map(|a| Self::Answer::try_from(a.to_string()))
-            .transpose()
+            .map(|form| form.fields.get(&self.answer_name).cloned())
+            .ok()
     }
 }
 
@@ -234,77 +166,90 @@ mod tests {
 
     #[tokio::test]
     async fn test_captcha_header_finder() {
-        let finder = CaptchaHeaderFinder::<String, String>::new();
+        let finder = CaptchaHeaderFinder::new();
         let mut req = Request::default();
         let headers = req.headers_mut();
-        let token = uuid::Uuid::new_v4();
+
         headers.insert(
             HeaderName::from_static("x-captcha-token"),
-            HeaderValue::from_str(&token.to_string()).unwrap(),
+            HeaderValue::from_str("token").unwrap(),
         );
         headers.insert(
             HeaderName::from_static("x-captcha-answer"),
             HeaderValue::from_static("answer"),
         );
+
         assert_eq!(
             finder.find_token(&mut req).await,
-            Ok(Some(token.to_string()))
+            Some(Some("token".to_owned()))
         );
-        assert!(matches!(
+        assert_eq!(
             finder.find_answer(&mut req).await,
-            Ok(Some(a)) if a == *"answer"
-        ));
+            Some(Some("answer".to_owned()))
+        );
     }
 
     #[tokio::test]
     async fn test_captcha_header_finder_customized() {
-        let finder = CaptchaHeaderFinder::<String, String>::new()
+        let finder = CaptchaHeaderFinder::new()
             .token_header(HeaderName::from_static("token"))
             .answer_header(HeaderName::from_static("answer"));
+
         let mut req = Request::default();
         let headers = req.headers_mut();
-        let token = uuid::Uuid::new_v4();
+
         headers.insert(
             HeaderName::from_static("token"),
-            HeaderValue::from_str(&token.to_string()).unwrap(),
+            HeaderValue::from_str("token").unwrap(),
         );
         headers.insert(
             HeaderName::from_static("answer"),
             HeaderValue::from_static("answer"),
         );
+
         assert_eq!(
             finder.find_token(&mut req).await,
-            Ok(Some(token.to_string()))
+            Some(Some("token".to_owned()))
         );
-        assert!(matches!(
+        assert_eq!(
             finder.find_answer(&mut req).await,
-            Ok(Some(a)) if a == *"answer"
-        ));
+            Some(Some("answer".to_owned()))
+        );
     }
 
     #[tokio::test]
     async fn test_captcha_header_finder_none() {
-        let finder = CaptchaHeaderFinder::<String, String>::new();
+        let finder = CaptchaHeaderFinder::new();
         let mut req = Request::default();
 
-        assert_eq!(finder.find_token(&mut req).await, Ok(None));
-        assert_eq!(finder.find_answer(&mut req).await, Ok(None));
+        assert_eq!(finder.find_token(&mut req).await, None);
+        assert_eq!(finder.find_answer(&mut req).await, None);
     }
 
     #[tokio::test]
     async fn test_captcha_header_finder_customized_none() {
-        let finder = CaptchaHeaderFinder::<String, String>::new()
+        let finder = CaptchaHeaderFinder::new()
             .token_header(HeaderName::from_static("token"))
             .answer_header(HeaderName::from_static("answer"));
         let mut req = Request::default();
+        let headers = req.headers_mut();
 
-        assert_eq!(finder.find_token(&mut req).await, Ok(None));
-        assert_eq!(finder.find_answer(&mut req).await, Ok(None));
+        headers.insert(
+            HeaderName::from_static("x-captcha-token"),
+            HeaderValue::from_str("token").unwrap(),
+        );
+        headers.insert(
+            HeaderName::from_static("x-captcha-answer"),
+            HeaderValue::from_static("answer"),
+        );
+
+        assert_eq!(finder.find_token(&mut req).await, None);
+        assert_eq!(finder.find_answer(&mut req).await, None);
     }
 
     #[tokio::test]
     async fn test_captcha_form_finder() {
-        let finder = CaptchaFormFinder::<String, String>::new();
+        let finder = CaptchaFormFinder::new();
         let mut req = Request::default();
         *req.body_mut() = ReqBody::Once("captcha_token=token&captcha_answer=answer".into());
         let headers = req.headers_mut();
@@ -315,17 +260,17 @@ mod tests {
 
         assert_eq!(
             finder.find_token(&mut req).await,
-            Ok(Some("token".to_string()))
+            Some(Some("token".to_owned()))
         );
-        assert!(matches!(
+        assert_eq!(
             finder.find_answer(&mut req).await,
-            Ok(Some(a)) if a == *"answer"
-        ));
+            Some(Some("answer".to_owned()))
+        );
     }
 
     #[tokio::test]
     async fn test_captcha_form_finder_customized() {
-        let finder = CaptchaFormFinder::<String, String>::new()
+        let finder = CaptchaFormFinder::new()
             .token_name("token".to_string())
             .answer_name("answer".to_string());
         let mut req = Request::default();
@@ -338,17 +283,17 @@ mod tests {
 
         assert_eq!(
             finder.find_token(&mut req).await,
-            Ok(Some("token".to_string()))
+            Some(Some("token".to_owned()))
         );
-        assert!(matches!(
+        assert_eq!(
             finder.find_answer(&mut req).await,
-            Ok(Some(a)) if a == *"answer"
-        ));
+            Some(Some("answer".to_owned()))
+        );
     }
 
     #[tokio::test]
     async fn test_captcha_form_finder_none() {
-        let finder = CaptchaFormFinder::<String, String>::new();
+        let finder = CaptchaFormFinder::new();
         let mut req = Request::default();
         *req.body_mut() = ReqBody::Once("".into());
         let headers = req.headers_mut();
@@ -357,13 +302,13 @@ mod tests {
             HeaderValue::from_str(&ContentType::form_url_encoded().to_string()).unwrap(),
         );
 
-        assert_eq!(finder.find_token(&mut req).await, Ok(None));
-        assert_eq!(finder.find_answer(&mut req).await, Ok(None));
+        assert_eq!(finder.find_token(&mut req).await, Some(None));
+        assert_eq!(finder.find_answer(&mut req).await, Some(None));
     }
 
     #[tokio::test]
     async fn test_captcha_form_finder_customized_none() {
-        let finder = CaptchaFormFinder::<String, String>::new()
+        let finder = CaptchaFormFinder::new()
             .token_name("token".to_string())
             .answer_name("answer".to_string());
         let mut req = Request::default();
@@ -374,13 +319,13 @@ mod tests {
             HeaderValue::from_str(&ContentType::form_url_encoded().to_string()).unwrap(),
         );
 
-        assert_eq!(finder.find_token(&mut req).await, Ok(None));
-        assert_eq!(finder.find_answer(&mut req).await, Ok(None));
+        assert_eq!(finder.find_token(&mut req).await, Some(None));
+        assert_eq!(finder.find_answer(&mut req).await, Some(None));
     }
 
     #[tokio::test]
     async fn test_captcha_form_finder_invalid() {
-        let finder = CaptchaFormFinder::<String, String>::new();
+        let finder = CaptchaFormFinder::new();
         let mut req = Request::default();
         *req.body_mut() = ReqBody::Once("captcha_token=token&captcha_answer=answer".into());
         let headers = req.headers_mut();
@@ -389,7 +334,7 @@ mod tests {
             HeaderValue::from_str(&ContentType::json().to_string()).unwrap(),
         );
 
-        assert_eq!(finder.find_token(&mut req).await, Ok(None));
-        assert_eq!(finder.find_answer(&mut req).await, Ok(None));
+        assert_eq!(finder.find_token(&mut req).await, None);
+        assert_eq!(finder.find_answer(&mut req).await, None);
     }
 }
