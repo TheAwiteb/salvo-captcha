@@ -17,6 +17,10 @@ jobs:
         run: cargo +1.75 build
       - name: Build the source code
         run: cargo build
+      - name: Build examples
+        run: cargo build -F 'cacache-storage' --example simple_login
+      - name: Run tests
+        run: cargo test --tests --all-features
       - name: Check the code format
         run: cargo fmt -- --check
       - name: Run cargo-check
