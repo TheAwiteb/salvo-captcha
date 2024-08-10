@@ -78,85 +78,71 @@ mod tests {
     use salvo_core::http::HeaderValue;
 
     #[tokio::test]
-    async fn test_captcha_header_finder() {
-        let finder = CaptchaHeaderFinder::new();
+    #[rstest::rstest]
+    #[case::not_found(None, None, None, None, None, None)]
+    #[case::normal(
+         None,
+         None,
+         Some(("x-captcha-token", "token")),
+         Some(("x-captcha-answer", "answer")),
+         Some(Some("token")),
+         Some(Some("answer"))
+    )]
+    #[case::custom_headers(
+         Some("custom-token"),
+         Some("custom-answer"),
+         Some(("custom-token", "token")),
+         Some(("custom-answer", "answer")),
+         Some(Some("token")),
+         Some(Some("answer"))
+    )]
+    #[case::custom_not_found(Some("custom-token"), Some("custom-answer"), None, None, None, None)]
+    #[case::custom_not_found_with_headers(
+         Some("custom-token"),
+         Some("custom-answer"),
+         Some(("x-captcha-token", "token")),
+         Some(("x-captcha-answer", "answer")),
+         None,
+         None
+    )]
+    async fn test_header_finder(
+        #[case] custom_token_header: Option<&'static str>,
+        #[case] custom_answer_header: Option<&'static str>,
+        #[case] token_header_name_value: Option<(&'static str, &'static str)>,
+        #[case] answer_header_name_value: Option<(&'static str, &'static str)>,
+        #[case] excepted_token: Option<Option<&'static str>>,
+        #[case] excepted_answer: Option<Option<&'static str>>,
+    ) {
+        let mut finder = CaptchaHeaderFinder::new();
+        if let Some(custom_token) = custom_token_header {
+            finder = finder.token_header(HeaderName::from_static(custom_token));
+        }
+        if let Some(custom_answer) = custom_answer_header {
+            finder = finder.answer_header(HeaderName::from_static(custom_answer));
+        }
+
         let mut req = Request::default();
         let headers = req.headers_mut();
-
-        headers.insert(
-            HeaderName::from_static("x-captcha-token"),
-            HeaderValue::from_str("token").unwrap(),
-        );
-        headers.insert(
-            HeaderName::from_static("x-captcha-answer"),
-            HeaderValue::from_static("answer"),
-        );
+        if let Some((token_header_name, token_header_value)) = token_header_name_value {
+            headers.insert(
+                HeaderName::from_static(token_header_name),
+                HeaderValue::from_static(token_header_value),
+            );
+        }
+        if let Some((answer_header_name, answer_header_value)) = answer_header_name_value {
+            headers.insert(
+                HeaderName::from_static(answer_header_name),
+                HeaderValue::from_static(answer_header_value),
+            );
+        }
 
         assert_eq!(
             finder.find_token(&mut req).await,
-            Some(Some("token".to_owned()))
+            excepted_token.map(|o| o.map(ToOwned::to_owned))
         );
         assert_eq!(
             finder.find_answer(&mut req).await,
-            Some(Some("answer".to_owned()))
+            excepted_answer.map(|o| o.map(ToOwned::to_owned))
         );
-    }
-
-    #[tokio::test]
-    async fn test_captcha_header_finder_customized() {
-        let finder = CaptchaHeaderFinder::new()
-            .token_header(HeaderName::from_static("token"))
-            .answer_header(HeaderName::from_static("answer"));
-
-        let mut req = Request::default();
-        let headers = req.headers_mut();
-
-        headers.insert(
-            HeaderName::from_static("token"),
-            HeaderValue::from_str("token").unwrap(),
-        );
-        headers.insert(
-            HeaderName::from_static("answer"),
-            HeaderValue::from_static("answer"),
-        );
-
-        assert_eq!(
-            finder.find_token(&mut req).await,
-            Some(Some("token".to_owned()))
-        );
-        assert_eq!(
-            finder.find_answer(&mut req).await,
-            Some(Some("answer".to_owned()))
-        );
-    }
-
-    #[tokio::test]
-    async fn test_captcha_header_finder_none() {
-        let finder = CaptchaHeaderFinder::new();
-        let mut req = Request::default();
-
-        assert_eq!(finder.find_token(&mut req).await, None);
-        assert_eq!(finder.find_answer(&mut req).await, None);
-    }
-
-    #[tokio::test]
-    async fn test_captcha_header_finder_customized_none() {
-        let finder = CaptchaHeaderFinder::new()
-            .token_header(HeaderName::from_static("token"))
-            .answer_header(HeaderName::from_static("answer"));
-        let mut req = Request::default();
-        let headers = req.headers_mut();
-
-        headers.insert(
-            HeaderName::from_static("x-captcha-token"),
-            HeaderValue::from_str("token").unwrap(),
-        );
-        headers.insert(
-            HeaderName::from_static("x-captcha-answer"),
-            HeaderValue::from_static("answer"),
-        );
-
-        assert_eq!(finder.find_token(&mut req).await, None);
-        assert_eq!(finder.find_answer(&mut req).await, None);
     }
 }
