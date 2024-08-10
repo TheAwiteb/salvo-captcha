@@ -17,7 +17,7 @@ pub trait CaptchaGenerator: CaptchaStorage {
     ///
     /// The returned captcha image is 220x110 pixels.
     ///
-    /// For more information about the captcha name and difficulty, see the [`README.md`](https://github.com/TheAwiteb/salvo-captcha/#captcha-name-and-difficulty).
+    /// For more information about the captcha name and difficulty, see the [`README.md`](https://git.4rs.nl/awiteb/salvo-captcha/#captcha-name-and-difficulty).
     fn new_captcha(
         &self,
         name: CaptchaName,

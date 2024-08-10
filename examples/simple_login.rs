@@ -152,16 +152,13 @@ fn index_page(captcha_image: String, captcha_token: String) -> String {
             </form>
             <srong>Or you can skip the captcha</strong>
             <form action="/skipped" method="post">
-                <input type="hidden" name="captcha_token" value="{captcha_token}" />
-                <input type="hidden" name="captcha_answer"/>
-
                 <input type="text" name="username" placeholder="Username" />
                 <br/>
                 <input type="password" name="password" placeholder="Password" />
                 <br/>
                 <input type="submit" value="Skip Captcha" />
             </form>
-            <a href="https://github.com/TheAwiteb/salvo-captcha">Source Code</a>
+            <a href="https://git.4rs.nl/awiteb/salvo-captcha">Source Code</a>
         </body>
     </html>
     "#
@@ -182,7 +179,7 @@ fn captcha_result_page(captcha_result: String) -> String {
         </style>
         <body>
             <h1>Salvo Captcha Example</h1>
-            <h2>Sign In</h2>
+            <h2>Result page</h2>
             <strong>{captcha_result}</strong>
             <br/>
             <a href="/">Go Back</a>
