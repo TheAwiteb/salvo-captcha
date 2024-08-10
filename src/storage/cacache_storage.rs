@@ -9,62 +9,22 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-use std::{sync::Arc, time::Duration};
-
-#[cfg(feature = "cacache-storage")]
 use std::{
     path::{Path, PathBuf},
-    time::SystemTime,
+    time::{Duration, SystemTime},
 };
 
-/// Trait to store the captcha token and answer. is also clear the expired captcha.
-///
-/// The trait will be implemented for `Arc<T>` if `T` implements the trait.
-///
-/// The trait is thread safe, so the storage can be shared between threads.
-pub trait CaptchaStorage: Send + Sync + 'static
-where
-    Self: Clone + std::fmt::Debug,
-{
-    /// The error type of the storage.
-    type Error: std::fmt::Display + std::fmt::Debug + Send;
-
-    /// Store the captcha token and answer.
-    fn store_answer(
-        &self,
-        answer: String,
-    ) -> impl std::future::Future<Output = Result<String, Self::Error>> + Send;
-
-    /// Returns the answer of the captcha token. This method will return None if the token is not exist.
-    fn get_answer(
-        &self,
-        token: &str,
-    ) -> impl std::future::Future<Output = Result<Option<String>, Self::Error>> + Send;
-
-    /// Clear the expired captcha.
-    fn clear_expired(
-        &self,
-        expired_after: Duration,
-    ) -> impl std::future::Future<Output = Result<(), Self::Error>> + Send;
-
-    /// Clear the captcha by token.
-    fn clear_by_token(
-        &self,
-        token: &str,
-    ) -> impl std::future::Future<Output = Result<(), Self::Error>> + Send;
-}
+use crate::CaptchaStorage;
 
 /// The [`cacache`] storage.
 ///
 /// [`cacache`]: https://github.com/zkat/cacache-rs
-#[cfg(feature = "cacache-storage")]
 #[derive(Debug, Clone)]
 pub struct CacacheStorage {
     /// The cacache cache directory.
     cache_dir: PathBuf,
 }
 
-#[cfg(feature = "cacache-storage")]
 impl CacacheStorage {
     /// Create a new CacacheStorage
     pub fn new(cache_dir: impl Into<PathBuf>) -> Self {
@@ -79,7 +39,6 @@ impl CacacheStorage {
     }
 }
 
-#[cfg(feature = "cacache-storage")]
 impl CaptchaStorage for CacacheStorage {
     type Error = cacache::Error;
 
@@ -144,43 +103,7 @@ impl CaptchaStorage for CacacheStorage {
     }
 }
 
-impl<T> CaptchaStorage for Arc<T>
-where
-    T: CaptchaStorage,
-{
-    type Error = T::Error;
-
-    fn store_answer(
-        &self,
-        answer: String,
-    ) -> impl std::future::Future<Output = Result<String, Self::Error>> + Send {
-        self.as_ref().store_answer(answer)
-    }
-
-    fn get_answer(
-        &self,
-        token: &str,
-    ) -> impl std::future::Future<Output = Result<Option<String>, Self::Error>> + Send {
-        self.as_ref().get_answer(token)
-    }
-
-    fn clear_expired(
-        &self,
-        expired_after: Duration,
-    ) -> impl std::future::Future<Output = Result<(), Self::Error>> + Send {
-        self.as_ref().clear_expired(expired_after)
-    }
-
-    fn clear_by_token(
-        &self,
-        token: &str,
-    ) -> impl std::future::Future<Output = Result<(), Self::Error>> + Send {
-        self.as_ref().clear_by_token(token)
-    }
-}
-
 #[cfg(test)]
-#[cfg(feature = "cacache-storage")]
 mod tests {
     use super::*;
 
