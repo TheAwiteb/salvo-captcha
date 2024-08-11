@@ -110,6 +110,24 @@ mod tests {
         Some(Some("token")),
         Some(Some("answer"))
     )]
+    #[case::only_token(
+        None,
+        None,
+        Some(("captcha_token", "token")),
+        None,
+        "application/x-www-form-urlencoded",
+        Some(Some("token")),
+        None
+    )]
+    #[case::only_answer(
+        None,
+        None,
+        None,
+        Some(("captcha_answer", "answer")),
+        "application/x-www-form-urlencoded",
+        None,
+        Some(Some("answer"))
+    )]
     #[case::custom_not_found(
         Some("custom_token"),
         Some("custom_answer"),
