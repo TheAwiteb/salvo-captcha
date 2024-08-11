@@ -62,15 +62,15 @@ impl CaptchaFinder for CaptchaFormFinder {
     async fn find_token(&self, req: &mut Request) -> Option<Option<String>> {
         req.form_data()
             .await
-            .map(|form| form.fields.get(&self.token_name).cloned())
             .ok()
+            .and_then(|form| form.fields.get(&self.token_name).cloned().map(Some))
     }
 
     async fn find_answer(&self, req: &mut Request) -> Option<Option<String>> {
         req.form_data()
             .await
-            .map(|form| form.fields.get(&self.answer_name).cloned())
             .ok()
+            .and_then(|form| form.fields.get(&self.answer_name).cloned().map(Some))
     }
 }
 
