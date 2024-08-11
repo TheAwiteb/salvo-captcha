@@ -96,6 +96,22 @@ mod tests {
          Some(Some("token")),
          Some(Some("answer"))
     )]
+    #[case::only_token(
+         None,
+         None,
+         Some(("x-captcha-token", "token")),
+         None,
+         Some(Some("token")),
+         None
+    )]
+    #[case::only_answer(
+         None,
+         None,
+         None,
+         Some(("x-captcha-answer", "answer")),
+         None,
+         Some(Some("answer"))
+    )]
     #[case::custom_not_found(Some("custom-token"), Some("custom-answer"), None, None, None, None)]
     #[case::custom_not_found_with_headers(
          Some("custom-token"),
