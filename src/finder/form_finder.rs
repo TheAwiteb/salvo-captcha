@@ -76,98 +76,109 @@ impl CaptchaFinder for CaptchaFormFinder {
 
 #[cfg(test)]
 mod tests {
-    use salvo_core::http::{header, headers::ContentType, HeaderValue, ReqBody};
+    use salvo_core::http::{header, HeaderValue, ReqBody};
 
     use super::*;
 
     #[tokio::test]
-    async fn test_captcha_form_finder() {
-        let finder = CaptchaFormFinder::new();
+    #[rstest::rstest]
+    #[case::not_found(
+        None,
+        None,
+        None,
+        None,
+        "application/x-www-form-urlencoded",
+        None,
+        None
+    )]
+    #[case::not_found(None, None, None, None, "text/plain", None, None)]
+    #[case::normal(
+        None,
+        None,
+        Some(("captcha_token", "token")),
+        Some(("captcha_answer", "answer")),
+        "application/x-www-form-urlencoded",
+        Some(Some("token")),
+        Some(Some("answer"))
+    )]
+    #[case::custom_keys(
+        Some("custom_token"),
+        Some("custom_answer"),
+        Some(("custom_token", "token")),
+        Some(("custom_answer", "answer")),
+        "application/x-www-form-urlencoded",
+        Some(Some("token")),
+        Some(Some("answer"))
+    )]
+    #[case::custom_not_found(
+        Some("custom_token"),
+        Some("custom_answer"),
+        None,
+        None,
+        "application/x-www-form-urlencoded",
+        None,
+        None
+    )]
+    #[case::custom_not_found_with_body(
+        Some("custom_token"),
+        Some("custom_answer"),
+        Some(("captcha_token", "token")),
+        Some(("captcha_answer", "answer")),
+        "application/x-www-form-urlencoded",
+        None,
+        None
+    )]
+    #[case::invalid_type(
+        None,
+        None,
+        Some(("captcha_token", "token")),
+        Some(("captcha_answer", "answer")),
+        "application/json",
+        None,
+        None
+    )]
+    async fn test_form_finder(
+        #[case] custom_token_key: Option<&'static str>,
+        #[case] custom_answer_key: Option<&'static str>,
+        #[case] token_key_val: Option<(&'static str, &'static str)>,
+        #[case] answer_key_val: Option<(&'static str, &'static str)>,
+        #[case] content_type: &'static str,
+        #[case] excepted_token: Option<Option<&'static str>>,
+        #[case] excepted_answer: Option<Option<&'static str>>,
+    ) {
         let mut req = Request::default();
-        *req.body_mut() = ReqBody::Once("captcha_token=token&captcha_answer=answer".into());
+        let mut finder = CaptchaFormFinder::new();
+        if let Some(token_key) = custom_token_key {
+            finder = finder.token_name(token_key.to_string())
+        }
+        if let Some(answer_key) = custom_answer_key {
+            finder = finder.answer_name(answer_key.to_string())
+        }
+
+        let body = token_key_val
+            .zip(answer_key_val)
+            .map(|((t_k, t_v), (a_k, a_v))| format!("{t_k}={t_v}&{a_k}={a_v}"))
+            .unwrap_or_else(|| {
+                token_key_val
+                    .or(answer_key_val)
+                    .map(|(k, v)| format!("{k}={v}"))
+                    .unwrap_or_default()
+            });
+
+        *req.body_mut() = ReqBody::Once(body.into());
         let headers = req.headers_mut();
         headers.insert(
             header::CONTENT_TYPE,
-            HeaderValue::from_str(&ContentType::form_url_encoded().to_string()).unwrap(),
+            HeaderValue::from_str(content_type).unwrap(),
         );
 
         assert_eq!(
             finder.find_token(&mut req).await,
-            Some(Some("token".to_owned()))
+            excepted_token.map(|o| o.map(ToOwned::to_owned))
         );
         assert_eq!(
             finder.find_answer(&mut req).await,
-            Some(Some("answer".to_owned()))
+            excepted_answer.map(|o| o.map(ToOwned::to_owned))
         );
-    }
-
-    #[tokio::test]
-    async fn test_captcha_form_finder_customized() {
-        let finder = CaptchaFormFinder::new()
-            .token_name("token".to_string())
-            .answer_name("answer".to_string());
-        let mut req = Request::default();
-        *req.body_mut() = ReqBody::Once("token=token&answer=answer".into());
-        let headers = req.headers_mut();
-        headers.insert(
-            header::CONTENT_TYPE,
-            HeaderValue::from_str(&ContentType::form_url_encoded().to_string()).unwrap(),
-        );
-
-        assert_eq!(
-            finder.find_token(&mut req).await,
-            Some(Some("token".to_owned()))
-        );
-        assert_eq!(
-            finder.find_answer(&mut req).await,
-            Some(Some("answer".to_owned()))
-        );
-    }
-
-    #[tokio::test]
-    async fn test_captcha_form_finder_none() {
-        let finder = CaptchaFormFinder::new();
-        let mut req = Request::default();
-        *req.body_mut() = ReqBody::Once("".into());
-        let headers = req.headers_mut();
-        headers.insert(
-            header::CONTENT_TYPE,
-            HeaderValue::from_str(&ContentType::form_url_encoded().to_string()).unwrap(),
-        );
-
-        assert_eq!(finder.find_token(&mut req).await, Some(None));
-        assert_eq!(finder.find_answer(&mut req).await, Some(None));
-    }
-
-    #[tokio::test]
-    async fn test_captcha_form_finder_customized_none() {
-        let finder = CaptchaFormFinder::new()
-            .token_name("token".to_string())
-            .answer_name("answer".to_string());
-        let mut req = Request::default();
-        *req.body_mut() = ReqBody::Once("".into());
-        let headers = req.headers_mut();
-        headers.insert(
-            header::CONTENT_TYPE,
-            HeaderValue::from_str(&ContentType::form_url_encoded().to_string()).unwrap(),
-        );
-
-        assert_eq!(finder.find_token(&mut req).await, Some(None));
-        assert_eq!(finder.find_answer(&mut req).await, Some(None));
-    }
-
-    #[tokio::test]
-    async fn test_captcha_form_finder_invalid() {
-        let finder = CaptchaFormFinder::new();
-        let mut req = Request::default();
-        *req.body_mut() = ReqBody::Once("captcha_token=token&captcha_answer=answer".into());
-        let headers = req.headers_mut();
-        headers.insert(
-            header::CONTENT_TYPE,
-            HeaderValue::from_str(&ContentType::json().to_string()).unwrap(),
-        );
-
-        assert_eq!(finder.find_token(&mut req).await, None);
-        assert_eq!(finder.find_answer(&mut req).await, None);
     }
 }
