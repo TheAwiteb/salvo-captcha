@@ -13,9 +13,11 @@ use salvo_core::http::Request;
 
 mod form_finder;
 mod header_finder;
+mod query_finder;
 
 pub use form_finder::*;
 pub use header_finder::*;
+pub use query_finder::*;
 
 /// Trait to find the captcha token and answer from the request.
 pub trait CaptchaFinder: Send + Sync {
