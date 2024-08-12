@@ -20,7 +20,7 @@ pub use header_finder::*;
 pub use query_finder::*;
 
 /// Trait to find the captcha token and answer from the request.
-pub trait CaptchaFinder: Send + Sync {
+pub trait CaptchaFinder: Send + Sync + 'static {
     /// Find the captcha token from the request.
     ///
     /// ### Returns
