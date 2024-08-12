@@ -19,7 +19,7 @@ _default:
 # Run the CI (Local use only)
 @ci:
     cargo fmt --all --check
-    cargo build -F 'simple_generator' --example simple_login
+    cargo build -F 'simple-generator' --example simple_login
     cargo clippy --workspace --all-targets --examples --tests --all-features -- -D warnings
     cargo nextest run --workspace --all-targets --all-features
     @{{JUST_EXECUTABLE}} msrv

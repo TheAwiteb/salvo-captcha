@@ -9,7 +9,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-#[cfg(feature = "simple_generator")]
+#[cfg(feature = "simple-generator")]
 mod simple_generator;
 
 #[cfg_attr(docsrs, doc(cfg(feature = "simple-generator")))]

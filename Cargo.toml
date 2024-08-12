@@ -1,6 +1,6 @@
 [package]
 name = "salvo-captcha"
-version = "0.1.0"
+version = "0.2.0"
 rust-version = "1.75.0"
 edition = "2021"
 authors = ["Awiteb <a@4rs.nl>"]
@@ -24,7 +24,7 @@ either = { version = "1.13.0", default-features = false }
 
 [features]
 cacache-storage = ["dep:cacache"]
-simple_generator = ["dep:captcha"]
+simple-generator = ["dep:captcha"]
 
 [package.metadata.docs.rs]
 all-features = true
@@ -39,4 +39,4 @@ rstest = "0.22.0"
 
 [[example]]
 name = "simple_login"
-required-features = ["simple_generator"]
+required-features = ["simple-generator"]
