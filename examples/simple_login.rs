@@ -4,7 +4,7 @@
 //
 // Run the example with `cargo run --example simple_login --features cacache-storage`
 
-use std::{sync::Arc, time::Duration};
+use std::sync::Arc;
 
 use base64::{engine::GeneralPurpose, Engine};
 use salvo::prelude::*;
@@ -16,18 +16,22 @@ const BASE_64_ENGINE: GeneralPurpose = GeneralPurpose::new(
     base64::engine::general_purpose::PAD,
 );
 
+const SIMPLE_GENERATOR: SimpleGenerator =
+    SimpleGenerator::new(CaptchaName::Normal, CaptchaDifficulty::Medium);
+
 #[handler]
 async fn index(res: &mut Response, depot: &mut Depot) {
     // Get the captcha from the depot
-    let captcha_storage = depot.obtain::<Arc<CacacheStorage>>().unwrap();
+    let captcha_storage = depot.obtain::<Arc<MemoryStorage>>().unwrap();
 
     // Create a new captcha
-    let (token, image) = captcha_storage
-        .as_ref()
-        .new_captcha(CaptchaName::Mila, CaptchaDifficulty::Medium)
-        .await
-        .expect("Failed to save captcha")
-        .expect("Failed to create captcha");
+    let Ok((token, image)) = captcha_storage.new_captcha(SIMPLE_GENERATOR).await else {
+        res.status_code(StatusCode::INTERNAL_SERVER_ERROR);
+        res.render(Text::Html(
+            "<html><body><h1>Server Error 500</h1></body></html>",
+        ));
+        return;
+    };
 
     // Convert the image to base64
     let image = BASE_64_ENGINE.encode(image);
@@ -64,36 +68,15 @@ async fn auth(req: &mut Request, res: &mut Response, depot: &mut Depot) {
 
 #[tokio::main]
 async fn main() {
-    let captcha_middleware = Captcha::new(
-        CacacheStorage::new("./captcha-cache"),
-        CaptchaFormFinder::new(),
-    )
-    .skipper(|req: &mut Request, _: &Depot| {
-        // Skip the captcha if the request path is /skipped
-        req.uri().path() == "/skipped"
-    });
-    let captcha_storage = Arc::new(captcha_middleware.storage().clone());
-
-    // Set up a task to clean the expired captcha, just call the `clear_expired` function from the storage
-    let captcha_cleaner = tokio::spawn({
-        let cleanner_storage = captcha_storage.clone();
-        async move {
-            let captcha_expired_after = Duration::from_secs(60 * 5);
-            let clean_interval = Duration::from_secs(60);
-
-            // Just this loop, to clean the expired captcha every 60 seconds, each captcha will be expired after 5 minutes
-            loop {
-                cleanner_storage
-                    .clear_expired(captcha_expired_after)
-                    .await
-                    .ok(); // You should log this error
-                tokio::time::sleep(clean_interval).await;
-            }
-        }
-    });
+    let captcha_storage = Arc::new(MemoryStorage::new());
+    let captcha_middleware =
+        CaptchaBuilder::new(Arc::clone(&captcha_storage), CaptchaFormFinder::new())
+            // Skip the captcha if the request path is /skipped
+            .skipper(|req: &mut Request, _: &Depot| req.uri().path() == "/skipped")
+            .build();
 
     let router = Router::new()
-        .hoop(affix::inject(captcha_storage.clone()))
+        .hoop(affix::inject(captcha_storage))
         .push(Router::with_path("/").get(index))
         .push(
             Router::new()
@@ -103,9 +86,7 @@ async fn main() {
         );
 
     let acceptor = TcpListener::new(("127.0.0.1", 5800)).bind().await;
-    println!("Starting server on http://127.0.0.1:5800");
     Server::new(acceptor).serve(router).await;
-    captcha_cleaner.await.ok();
 }
 
 fn index_page(captcha_image: String, captcha_token: String) -> String {
