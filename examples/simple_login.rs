@@ -73,6 +73,7 @@ async fn main() {
         CaptchaBuilder::new(Arc::clone(&captcha_storage), CaptchaFormFinder::new())
             // Skip the captcha if the request path is /skipped
             .skipper(|req: &mut Request, _: &Depot| req.uri().path() == "/skipped")
+            .case_insensitive()
             .build();
 
     let router = Router::new()

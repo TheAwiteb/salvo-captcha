@@ -42,6 +42,8 @@ where
     storage: Arc<S>,
     /// The skipper of the captcha, used to skip the captcha check.
     skipper: Box<dyn Skipper>,
+    /// The case sensitive of the captcha answer.
+    case_sensitive: bool,
 }
 
 /// The captcha states of the request
@@ -75,6 +77,7 @@ where
     captcha_expired_after: Duration,
     clean_interval: Duration,
     skipper: Box<dyn Skipper>,
+    case_sensitive: bool,
 }
 
 impl<S, F> CaptchaBuilder<Arc<S>, F>
@@ -90,7 +93,16 @@ where
             captcha_expired_after: Duration::from_secs(60 * 5),
             clean_interval: Duration::from_secs(60),
             skipper: Box::new(none_skipper),
+            case_sensitive: true,
         }
+    }
+
+    /// Remove the case sensitive of the captcha, default is case sensitive.
+    ///
+    /// This will make the captcha case insensitive, for example, the answer "Hello" will be the same as "hello".
+    pub fn case_insensitive(mut self) -> Self {
+        self.case_sensitive = false;
+        self
     }
 
     /// Set the duration after which the captcha will be expired, default is 5 minutes.
@@ -125,6 +137,7 @@ where
             self.captcha_expired_after,
             self.clean_interval,
             self.skipper,
+            self.case_sensitive,
         )
     }
 }
@@ -141,6 +154,7 @@ where
         captcha_expired_after: Duration,
         clean_interval: Duration,
         skipper: Box<dyn Skipper>,
+        case_sensitive: bool,
     ) -> Self {
         let task_storage = Arc::clone(&storage);
 
@@ -157,6 +171,7 @@ where
             finder,
             storage,
             skipper,
+            case_sensitive,
         }
     }
 }
@@ -224,7 +239,9 @@ where
         match self.storage.get_answer(&token).await {
             Ok(Some(captch_answer)) => {
                 log::info!("Captcha answer is exist in storage for token: {token}");
-                if captch_answer == answer {
+                if (captch_answer == answer && self.case_sensitive)
+                    || captch_answer.eq_ignore_ascii_case(&answer)
+                {
                     log::info!("Captcha answer is correct for token: {token}");
                     self.storage.clear_by_token(&token).await.ok();
                     depot.insert(CAPTCHA_STATE_KEY, CaptchaState::Passed);
