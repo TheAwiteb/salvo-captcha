@@ -29,7 +29,21 @@ pub use {captcha_gen::*, finder::*, storage::*};
 /// Key used to insert the captcha state into the depot
 pub const CAPTCHA_STATE_KEY: &str = "::salvo_captcha::captcha_state";
 
-/// Captcha struct, contains the token and answer.
+/// The captcha middleware
+///
+/// The captcha middleware is used to check the captcha token and answer from
+/// the request. You can use the [`CaptchaBuilder`] to create a new captcha
+/// middleware.
+///
+/// ## Note
+/// You need to generate the captcha token and answer before, then the captcha
+/// middleware will check the token and answer from the request using the finder
+/// and storage you provided. The captcha middleware will insert the
+/// [`CaptchaState`] into the depot, you can get the captcha state from the
+/// depot using the [`CaptchaDepotExt::get_captcha_state`] trait, which is
+/// implemented for the [`Depot`].
+/// 
+/// Check the [`examples`](https://git.4rs.nl/awiteb/salvo-captcha/src/branch/master/examples) for more information.
 #[non_exhaustive]
 pub struct Captcha<S, F>
 where

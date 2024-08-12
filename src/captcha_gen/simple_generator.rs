@@ -76,7 +76,7 @@ impl Display for SimpleGeneratorError {
 
 impl std::error::Error for SimpleGeneratorError {}
 
-/// The simple captcha generator
+/// A simple captcha generator, using the [`captcha`](https://crates.io/crates/captcha) crate.
 pub struct SimpleGenerator {
     name: CaptchaName,
     difficulty: CaptchaDifficulty,
@@ -93,8 +93,6 @@ impl CaptchaGenerator for SimpleGenerator {
     type Error = SimpleGeneratorError;
 
     /// The returned captcha image is 220x110 pixels in png format.
-    ///
-    /// For more information about the captcha name and difficulty, see the [`README.md`](https://git.4rs.nl/awiteb/salvo-captcha/#captcha-name-and-difficulty).
     async fn new_captcha(&self) -> Result<(String, Vec<u8>), Self::Error> {
         let Some((captcha_answer, captcha_image)) =
             captcha::by_name(self.difficulty.into(), self.name.into()).as_tuple()
