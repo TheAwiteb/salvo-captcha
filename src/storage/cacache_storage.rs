@@ -16,7 +16,7 @@ use std::{
 
 use crate::CaptchaStorage;
 
-/// The [`cacache`] storage.
+/// The [`cacache`] storage. Store the token and answer in the disk.
 ///
 /// [`cacache`]: https://github.com/zkat/cacache-rs
 #[derive(Debug, Clone)]
@@ -26,7 +26,7 @@ pub struct CacacheStorage {
 }
 
 impl CacacheStorage {
-    /// Create a new CacacheStorage
+    /// Create a new [`CacacheStorage`] instance with the cache directory.
     pub fn new(cache_dir: impl Into<PathBuf>) -> Self {
         Self {
             cache_dir: cache_dir.into(),

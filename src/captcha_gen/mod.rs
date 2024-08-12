@@ -12,7 +12,8 @@
 #[cfg(feature = "simple_generator")]
 mod simple_generator;
 
-#[cfg(feature = "simple_generator")]
+#[cfg_attr(docsrs, doc(cfg(feature = "simple-generator")))]
+#[cfg(feature = "simple-generator")]
 pub use simple_generator::*;
 
 /// Captcha generator, used to generate a new captcha image and answer.

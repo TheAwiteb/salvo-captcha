@@ -15,6 +15,7 @@ use std::{sync::Arc, time::Duration};
 mod cacache_storage;
 mod memory_storage;
 
+#[cfg_attr(docsrs, doc(cfg(feature = "cacache-storage")))]
 #[cfg(feature = "cacache-storage")]
 pub use cacache_storage::*;
 pub use memory_storage::*;

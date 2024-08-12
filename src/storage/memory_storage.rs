@@ -20,7 +20,7 @@ use tokio::sync::RwLock;
 
 use crate::CaptchaStorage;
 
-/// Captcha storage implementation using an in-memory HashMap.
+/// Captcha storage implementation using an in-memory [HashMap].
 #[derive(Debug)]
 pub struct MemoryStorage(RwLock<HashMap<String, (u64, String)>>);
 
@@ -32,6 +32,7 @@ impl MemoryStorage {
 }
 
 impl CaptchaStorage for MemoryStorage {
+    /// This storage does not return any error.
     type Error = Infallible;
 
     async fn store_answer(&self, answer: String) -> Result<String, Self::Error> {
