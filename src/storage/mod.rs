@@ -22,12 +22,9 @@ pub use cacache_storage::*;
 /// The trait will be implemented for `Arc<T>` if `T` implements the trait.
 ///
 /// The trait is thread safe, so the storage can be shared between threads.
-pub trait CaptchaStorage: Send + Sync + 'static
-where
-    Self: Clone + std::fmt::Debug,
-{
+pub trait CaptchaStorage: Send + Sync + 'static {
     /// The error type of the storage.
-    type Error: std::fmt::Display + std::fmt::Debug + Send;
+    type Error: std::error::Error + Send;
 
     /// Store the captcha token and answer.
     fn store_answer(
