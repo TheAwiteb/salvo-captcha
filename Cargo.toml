@@ -14,14 +14,17 @@ categories = ["web-programming", "network-programming"]
 
 
 [dependencies]
-cacache = { version = "13", default-features = false, features = ["tokio-runtime", "mmap"], optional = true }
-captcha = { version = "0.0.9", default-features = false }
-log = "0.4"
 salvo_core = { version = ">= 0.65, < 0.69", default-features = false }
-uuid = { version = "1.7", features = ["v4"], optional = true }
+log = "0.4"
+uuid = { version = "1", features = ["v4"] }
+tokio = { version = "1", default-features = false }
+cacache = { version = "13", default-features = false, features = ["tokio-runtime", "mmap"], optional = true }
+captcha = { version = "0.0.9", default-features = false, optional = true}
+either = { version = "1.13.0", default-features = false }
 
 [features]
-cacache-storage = ["dep:cacache", "dep:uuid"]
+cacache-storage = ["dep:cacache"]
+simple_generator = ["dep:captcha"]
 
 [dev-dependencies]
 tempfile = "3.9"
@@ -32,4 +35,4 @@ rstest = "0.22.0"
 
 [[example]]
 name = "simple_login"
-required-features = ["cacache-storage"]
+required-features = ["simple_generator"]
