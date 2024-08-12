@@ -18,21 +18,19 @@ mod captcha_gen;
 mod finder;
 mod storage;
 
+use std::{sync::Arc, time::Duration};
+
 use salvo_core::{
     handler::{none_skipper, Skipper},
     Depot, FlowCtrl, Handler, Request, Response,
 };
 pub use {captcha_gen::*, finder::*, storage::*};
 
-// Exports from other crates
-pub use captcha::{CaptchaName, Difficulty as CaptchaDifficulty};
-
 /// Key used to insert the captcha state into the depot
 pub const CAPTCHA_STATE_KEY: &str = "::salvo_captcha::captcha_state";
 
 /// Captcha struct, contains the token and answer.
 #[non_exhaustive]
-#[allow(clippy::type_complexity)]
 pub struct Captcha<S, F>
 where
     S: CaptchaStorage,
@@ -41,7 +39,7 @@ where
     /// The captcha finder, used to find the captcha token and answer from the request.
     finder: F,
     /// The storage of the captcha, used to store and get the captcha token and answer.
-    storage: S,
+    storage: Arc<S>,
     /// The skipper of the captcha, used to skip the captcha check.
     skipper: Box<dyn Skipper>,
 }
@@ -66,29 +64,100 @@ pub enum CaptchaState {
     StorageError,
 }
 
+/// The [`Captcha`] builder
+pub struct CaptchaBuilder<S, F>
+where
+    S: CaptchaStorage,
+    F: CaptchaFinder,
+{
+    storage: S,
+    finder: F,
+    captcha_expired_after: Duration,
+    clean_interval: Duration,
+    skipper: Box<dyn Skipper>,
+}
+
+impl<S, F> CaptchaBuilder<Arc<S>, F>
+where
+    S: CaptchaStorage,
+    F: CaptchaFinder,
+{
+    /// Create a new [`CaptchaBuilder`] with the given storage and finder.
+    pub fn new(storage: Arc<S>, finder: F) -> Self {
+        CaptchaBuilder {
+            storage,
+            finder,
+            captcha_expired_after: Duration::from_secs(60 * 5),
+            clean_interval: Duration::from_secs(60),
+            skipper: Box::new(none_skipper),
+        }
+    }
+
+    /// Set the duration after which the captcha will be expired, default is 5 minutes.
+    ///
+    /// After the captcha is expired, it will be removed from the storage, and the user needs to get a new captcha.
+    pub fn expired_after(mut self, expired_after: impl Into<Duration>) -> Self {
+        self.captcha_expired_after = expired_after.into();
+        self
+    }
+
+    /// Set the interval to clean the expired captcha, default is 1 minute.
+    ///
+    /// The expired captcha will be removed from the storage every interval.
+    pub fn clean_interval(mut self, interval: impl Into<Duration>) -> Self {
+        self.clean_interval = interval.into();
+        self
+    }
+
+    /// Set the skipper of the captcha, default without skipper.
+    ///
+    /// The skipper is used to skip the captcha check, for example, you can skip the captcha check for the admin user.
+    pub fn skipper(mut self, skipper: impl Skipper) -> Self {
+        self.skipper = Box::new(skipper);
+        self
+    }
+
+    /// Build the [`Captcha`] with the given configuration.
+    pub fn build(self) -> Captcha<S, F> {
+        Captcha::new(
+            self.storage,
+            self.finder,
+            self.captcha_expired_after,
+            self.clean_interval,
+            self.skipper,
+        )
+    }
+}
+
 impl<S, F> Captcha<S, F>
 where
     S: CaptchaStorage,
     F: CaptchaFinder,
 {
     /// Create a new Captcha
-    pub fn new(storage: S, finder: F) -> Self {
+    fn new(
+        storage: Arc<S>,
+        finder: F,
+        captcha_expired_after: Duration,
+        clean_interval: Duration,
+        skipper: Box<dyn Skipper>,
+    ) -> Self {
+        let task_storage = Arc::clone(&storage);
+
+        tokio::spawn(async move {
+            loop {
+                if let Err(err) = task_storage.clear_expired(captcha_expired_after).await {
+                    log::error!("Captcha storage error: {err}")
+                }
+                tokio::time::sleep(clean_interval).await;
+            }
+        });
+
         Self {
             finder,
             storage,
-            skipper: Box::new(none_skipper),
+            skipper,
         }
-    }
-
-    /// Returns the captcha storage
-    pub fn storage(&self) -> &S {
-        &self.storage
-    }
-
-    /// Set the captcha skipper, the skipper will be used to check if the captcha check should be skipped.
-    pub fn skipper(mut self, skipper: impl Skipper) -> Self {
-        self.skipper = Box::new(skipper);
-        self
     }
 }
 
@@ -109,7 +178,7 @@ impl CaptchaDepotExt for Depot {
 impl<S, F> Handler for Captcha<S, F>
 where
     S: CaptchaStorage,
-    F: CaptchaFinder + 'static, // why?
+    F: CaptchaFinder,
 {
     async fn handle(
         &self,
@@ -118,7 +187,7 @@ where
         _: &mut Response,
         _: &mut FlowCtrl,
     ) {
-        if self.skipper.skipped(req, depot) {
+        if self.skipper.as_ref().skipped(req, depot) {
             log::info!("Captcha check is skipped");
             depot.insert(CAPTCHA_STATE_KEY, CaptchaState::Skipped);
             return;
