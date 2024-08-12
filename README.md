@@ -46,7 +46,14 @@ We provide fully customizable query parameters, form fields, and headers to find
 
 ## Captcha Generator
 
-We provide [`SimpleCaptchaGenerator`] which is a simple captcha generator based on the [`captcha`] crate. You can implement your own captcha generator by implementing the [`CaptchaGenerator`] trait.
+We provide [`SimpleCaptchaGenerator`] which is a simple captcha generator based on the [`captcha`] crate, you can enable it by enabling the `simple-generator` feature.
+
+```toml
+[dependencies]
+salvo-captcha = { version = "0.2", features = ["simple-generator"] }
+```
+
+You can implement your own generator by implementing the [`CaptchaGenerator`] trait.
 
 ### Captcha name and difficulty
 
