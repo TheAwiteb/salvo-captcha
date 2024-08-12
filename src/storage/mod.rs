@@ -13,9 +13,11 @@ use std::{sync::Arc, time::Duration};
 
 #[cfg(feature = "cacache-storage")]
 mod cacache_storage;
+mod memory_storage;
 
 #[cfg(feature = "cacache-storage")]
 pub use cacache_storage::*;
+pub use memory_storage::*;
 
 /// Trait to store the captcha token and answer. is also clear the expired captcha.
 ///
