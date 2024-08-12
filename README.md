@@ -14,7 +14,7 @@ First, add the following to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-salvo-captcha = "0.2"
+salvo-captcha = "0.3"
 ```
 
 Or use [`cargo add`] to add the dependency to your `Cargo.toml`:
@@ -37,7 +37,7 @@ A high-performance, concurrent, content-addressable disk cache. The storage is b
 
 ```toml
 [dependencies]
-salvo-captcha = { version = "0.2", features = ["cacache-storage"] }
+salvo-captcha = { version = "0.3", features = ["cacache-storage"] }
 ```
 
 ## Captcha Finder
@@ -50,7 +50,7 @@ We provide [`SimpleCaptchaGenerator`] which is a simple captcha generator based 
 
 ```toml
 [dependencies]
-salvo-captcha = { version = "0.2", features = ["simple-generator"] }
+salvo-captcha = { version = "0.3", features = ["simple-generator"] }
 ```
 
 You can implement your own generator by implementing the [`CaptchaGenerator`] trait.
