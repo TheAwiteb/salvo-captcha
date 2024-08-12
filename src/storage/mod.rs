@@ -51,6 +51,24 @@ pub trait CaptchaStorage: Send + Sync + 'static {
         &self,
         token: &str,
     ) -> impl std::future::Future<Output = Result<(), Self::Error>> + Send;
+
+    /// Create a new captcha image and return the answer and the image encoded as png.
+    ///
+    /// This method will store the answer in the storage.
+    fn new_captcha<G: crate::CaptchaGenerator>(
+        &self,
+        generator: G,
+    ) -> impl std::future::Future<
+        Output = Result<(String, Vec<u8>), either::Either<Self::Error, G::Error>>,
+    > + Send {
+        async move {
+            let (answer, image) = generator.new_captcha().await.map_err(either::Right)?;
+            Ok((
+                self.store_answer(answer).await.map_err(either::Left)?,
+                image,
+            ))
+        }
+    }
 }
 
 impl<T> CaptchaStorage for Arc<T>
