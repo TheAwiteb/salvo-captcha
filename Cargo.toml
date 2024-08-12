@@ -1,6 +1,6 @@
 [package]
 name = "salvo-captcha"
-version = "0.1.0"
+version = "0.2.0"
 rust-version = "1.75.0"
 edition = "2021"
 authors = ["Awiteb <a@4rs.nl>"]
