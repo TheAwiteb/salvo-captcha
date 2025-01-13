@@ -18,7 +18,7 @@ jobs:
       - name: Build the source code
         run: cargo build
       - name: Build examples
-        run: cargo build -F 'simple-generator' --example simple_login
+        run: cargo build -p example-login
       - name: Run tests
         run: cargo test --tests --all-features
       - name: Check the code format
