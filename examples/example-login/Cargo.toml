@@ -1,0 +1,22 @@
+[package]
+name = "example-login"
+version = "0.0.0"
+edition = "2021"
+authors = ["Awiteb <a@4rs.nl>"]
+description = "Simple login example for salvo-captcha middleware"
+license = "MIT"
+
+[dependencies]
+salvo-captcha = { path = "../../", features = [
+  "cacache-storage",
+  "simple-generator",
+] }
+tempfile = "3.9"
+tokio = { version = "1.35", features = ["macros", "rt-multi-thread"] }
+base64 = "0.21"
+salvo = { version = "0.76", default-features = false, features = [
+  "server",
+  "http1",
+  "http2",
+  "affix-state",
+] }

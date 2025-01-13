@@ -2,7 +2,7 @@
 // The page will be in <http://127.0.0.1:5800>
 // You can see a video of this example here:
 //
-// Run the example with `cargo run --example simple_login --features cacache-storage`
+// Run the example with `cargo run -p example-login`
 
 use std::sync::Arc;
 
@@ -77,7 +77,7 @@ async fn main() {
             .build();
 
     let router = Router::new()
-        .hoop(affix::inject(captcha_storage))
+        .hoop(affix_state::inject(captcha_storage))
         .push(Router::with_path("/").get(index))
         .push(
             Router::new()
