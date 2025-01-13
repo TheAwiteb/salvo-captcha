@@ -14,7 +14,7 @@ First, add the following to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-salvo-captcha = "0.3"
+salvo-captcha = "0.4"
 ```
 
 Or use [`cargo add`] to add the dependency to your `Cargo.toml`:
