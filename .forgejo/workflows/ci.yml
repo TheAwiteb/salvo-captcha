@@ -12,9 +12,7 @@ jobs:
     runs-on: debian
     steps:
       - uses: actions/checkout@v4
-      - uses: https://codeberg.org/TheAwiteb/rust-action@v1.75
-      - name: Check MSRV
-        run: cargo +1.75 build
+      - uses: https://codeberg.org/awiteb/rust-action@v1.80
       - name: Build the source code
         run: cargo build
       - name: Build examples
