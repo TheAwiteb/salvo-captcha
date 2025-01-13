@@ -11,7 +11,6 @@ salvo-captcha = { path = "../../", features = [
   "cacache-storage",
   "simple-generator",
 ] }
-tempfile = "3.9"
 tokio = { version = "1.35", features = ["macros", "rt-multi-thread"] }
 base64 = "0.21"
 salvo = { version = "0.76", default-features = false, features = [

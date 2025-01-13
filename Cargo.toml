@@ -37,4 +37,5 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [dev-dependencies]
+tempfile = "3.9"
 rstest = "0.22.0"
