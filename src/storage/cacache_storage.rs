@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Awiteb <a@4rs.nl>
+// Copyright (c) 2024-2025, Awiteb <a@4rs.nl>
 //     A captcha middleware for Salvo framework.
 //
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
