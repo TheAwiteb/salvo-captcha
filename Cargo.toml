@@ -9,7 +9,7 @@ edition = "2021"
 authors = ["Awiteb <a@4rs.nl>"]
 description = "A captcha middleware for Salvo framework."
 license = "MIT"
-repository = "https://git.4rs.nl/awiteb/salvo-captcha"
+repository = "https://git.4rs.nl/awiteb/salvo-captcha.git"
 documentation = "https://docs.rs/salvo-captcha"
 readme = "README.md"
 keywords = ["salvo", "captcha", "middleware"]
@@ -17,7 +17,7 @@ categories = ["web-programming", "network-programming"]
 
 
 [dependencies]
-salvo_core = { version = ">= 0.65, <= 0.76", default-features = false }
+salvo_core = { version = ">= 0.65, <= 0.79", default-features = false }
 log = "0.4"
 uuid = { version = "1", features = ["v4"] }
 tokio = { version = "1", default-features = false }
@@ -25,8 +25,8 @@ cacache = { version = "13", default-features = false, features = [
   "tokio-runtime",
   "mmap",
 ], optional = true }
-captcha = { version = "0.0.9", default-features = false, optional = true }
-either = { version = "1.13.0", default-features = false }
+captcha = { version = "1", default-features = false, optional = true }
+either = { version = "1", default-features = false }
 
 [features]
 cacache-storage = ["dep:cacache"]
