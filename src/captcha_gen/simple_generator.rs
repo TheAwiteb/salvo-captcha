@@ -94,12 +94,8 @@ impl CaptchaGenerator for SimpleGenerator {
 
     /// The returned captcha image is 220x110 pixels in png format.
     async fn new_captcha(&self) -> Result<(String, Vec<u8>), Self::Error> {
-        let Some((captcha_answer, captcha_image)) =
-            captcha::by_name(self.difficulty.into(), self.name.into()).as_tuple()
-        else {
-            return Err(SimpleGeneratorError::FaildEncodedToPng);
-        };
-
-        Ok((captcha_answer, captcha_image))
+        captcha::by_name(self.difficulty.into(), self.name.into())
+            .as_tuple()
+            .ok_or(SimpleGeneratorError::FaildEncodedToPng)
     }
 }
