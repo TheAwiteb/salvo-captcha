@@ -140,7 +140,7 @@ fn index_page(captcha_image: String, captcha_token: String) -> String {
                 <br/>
                 <input type="submit" value="Skip Captcha" />
             </form>
-            <a href="https://git.4rs.nl/awiteb/salvo-captcha">Source Code</a>
+            <a href="https://git.4rs.nl/awiteb/salvo-captcha.git">Source Code</a>
         </body>
     </html>
     "#

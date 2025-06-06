@@ -15,7 +15,7 @@ use std::fmt::Display;
 
 /// Supported captcha names
 ///
-/// See [`README.md`](https://git.4rs.nl/awiteb/salvo-captcha/#captcha-name-and-difficulty) for more information.
+/// See [`README.md`](https://git.4rs.nl/awiteb/salvo-captcha.git/about/#captcha-name-and-difficulty) for more information.
 #[derive(Debug, Clone, Copy)]
 pub enum CaptchaName {
     /// Plain text, without any distortion
@@ -28,7 +28,7 @@ pub enum CaptchaName {
 
 /// Supported captcha difficulties
 ///
-/// See [`README.md`](https://git.4rs.nl/awiteb/salvo-captcha/#captcha-name-and-difficulty) for more information.
+/// See [`README.md`](https://git.4rs.nl/awiteb/salvo-captcha.git/about/#captcha-name-and-difficulty) for more information.
 #[derive(Debug, Clone, Copy)]
 pub enum CaptchaDifficulty {
     /// Easy to read text

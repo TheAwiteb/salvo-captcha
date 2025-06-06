@@ -44,7 +44,7 @@ pub const CAPTCHA_STATE_KEY: &str = "::salvo_captcha::captcha_state";
 /// depot using the [`CaptchaDepotExt::get_captcha_state`] trait, which is
 /// implemented for the [`Depot`].
 ///
-/// Check the [`examples`](https://git.4rs.nl/awiteb/salvo-captcha/src/branch/master/examples) for more information.
+/// Check the [`examples`](https://git.4rs.nl/awiteb/salvo-captcha.git/tree/examples) for more information.
 #[non_exhaustive]
 pub struct Captcha<S, F>
 where

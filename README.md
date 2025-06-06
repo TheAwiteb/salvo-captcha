@@ -72,7 +72,7 @@ In this table, you can see the difference between the difficulties and the name 
 
 ### Main Repository
 
-- My Git (<https://git.4rs.nl/awiteb/salvo-captcha>)
+- My Git (<https://git.4rs.nl/awiteb/salvo-captcha.git>)
 
 ## License
 
@@ -84,7 +84,7 @@ This project is licensed under the MIT license for more details see [LICENSE] or
 [`SimpleCaptchaGenerator`]: https://docs.rs/salvo-captcha/latest/salvo_captcha/struct.SimpleCaptchaGenerator.html
 [`CaptchaGenerator`]: https://docs.rs/salvo-captcha/latest/salvo_captcha/trait.CaptchaGenerator.html
 [`CaptchaFinder`]: https://docs.rs/salvo-captcha/latest/salvo_captcha/trait.CaptchaFinder.html
-[examples]: https://git.4rs.nl/awiteb/salvo-captcha/src/branch/master/examples
+[examples]: https://git.4rs.nl/awiteb/salvo-captcha.git/tree/examples
 [`captcha`]: https://github.com/daniel-e/captcha
-[LICENSE]: https://git.4rs.nl/awiteb/salvo-captcha/src/branch/master/LICENSE
+[LICENSE]: https://git.4rs.nl/awiteb/salvo-captcha.git/tree/LICENSE
 [`cargo add`]: https://doc.rust-lang.org/cargo/commands/cargo-add.html
