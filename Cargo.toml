@@ -4,7 +4,7 @@ default-members = ["."]
 
 [package]
 name = "salvo-captcha"
-version = "0.4.0"
+version = "0.4.1"
 edition = "2021"
 authors = ["Awiteb <a@4rs.nl>"]
 description = "A captcha middleware for Salvo framework."
